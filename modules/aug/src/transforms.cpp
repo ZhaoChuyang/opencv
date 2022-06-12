@@ -1,4 +1,3 @@
-#include <iostream>
 #include "precomp.hpp"
 #include <opencv2/highgui.hpp>
 
@@ -8,18 +7,11 @@ namespace cv{
 
     // NOTE: cv::randomCrop or randomCrop?
     void randomCrop(InputArray _src, OutputArray _dst, const Size& sz, const Vec4i& padding, bool pad_if_need, int fill, int padding_mode){
-        // FIXME: whether the size of dst should be (src.cols+left+right, src.rows+top+bottom)
+        // FIXME: whether the size of src should be (src.cols+left+right, src.rows+top+bottom)
         Mat src = _src.getMat();
 
-        _dst.create(sz.height, sz.width, src.type());
-        Mat dst = _dst.getMat();
-//        src.copyTo(dst);
-//        Mat tmp = src.clone();
-        Mat tmp;
-        src.copyTo(tmp);
-
         if(padding != Vec4i()){
-            copyMakeBorder(tmp, tmp, padding[0], padding[1], padding[2], padding[3], padding_mode, fill);
+            copyMakeBorder(src, src, padding[0], padding[1], padding[2], padding[3], padding_mode, fill);
         }
 
         // NOTE: make sure src.rows == src.size().height and src.cols = src.size().width
@@ -36,18 +28,15 @@ namespace cv{
 
         int x, y;
         getRandomCropParams(src.rows, src.cols, sz.height, sz.width, &x, &y);
-        std::cout << x << " " << y << std::endl;
         Mat RoI(src, Rect(x, y, sz.width, sz.height));
+        _dst.create(sz.height, sz.width, src.type());
+        Mat dst = _dst.getMat();
         RoI.copyTo(dst);
-        std::cout << src.rows << " " << src.cols << std::endl;
-//        imshow("lena.png", dst);
-//        waitKey(0);
-        std::cout << dst.rows << " " << dst.cols << std::endl;
     }
 
     static void getRandomCropParams(int h, int w, int th, int tw, int* x, int* y){
         if(h+1 < th || w+1 < tw){
-            // FIXME: throw exception
+            CV_Error( Error::StsBadSize, "The cropped size is larger than the image size" );
         }
         if(h == th && w == tw){
             (*x) = 0;
