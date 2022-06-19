@@ -47,4 +47,57 @@ namespace cv{
         (*x) = rng.uniform(0, w-tw+1);
         (*y) = rng.uniform(0, h-th+1);
     }
+
+    RandomCrop::RandomCrop(const Size& sz, const Vec4i& padding, bool pad_if_need, int fill, int padding_mode):
+        sz (sz),
+        padding (padding),
+        pad_if_need (pad_if_need),
+        fill (fill),
+        padding_mode (padding_mode){};
+
+    void RandomCrop::call(InputArray src, OutputArray dst) const{
+        randomCrop(src, dst, sz, padding, pad_if_need, fill, padding_mode);
+    }
+
+    void randomFlip(InputArray _src, OutputArray _dst, int flipCode, double p){
+        /*
+         * flipCode:
+         * 0 is vertical flip
+         * 1 is horizontal flip
+         * -1 is flip bott horizontally and vertically
+         */
+        RNG& rng = theRNG();
+        bool flag = rng.uniform(0., 1.) < p;
+
+        Mat src = _src.getMat();
+        _dst.create(src.size(), src.type());
+        Mat dst = _dst.getMat();
+        if(!flag){
+            src.copyTo(dst);
+            return;
+        }
+        flip(src, dst, flipCode);
+    }
+
+    RandomFlip::RandomFlip(int flipCode, double p):
+        flipCode(flipCode),
+        p(p){};
+
+    void RandomFlip::call(InputArray src, OutputArray dst) const{
+        randomFlip(src, dst);
+    }
+
+    Compose::Compose(std::vector<Transform *> transforms):
+        transforms(transforms){};
+
+    void Compose::call(InputArray _src, OutputArray _dst) const{
+        Mat src = _src.getMat();
+
+
+        for(auto it = transforms.begin(); it != transforms.end(); ++it){
+            (*it)->call(src, src);
+        }
+        src.copyTo(_dst);
+    }
+
 }
