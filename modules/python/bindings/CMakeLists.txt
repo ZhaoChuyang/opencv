@@ -17,7 +17,6 @@ set(OPENCV_PYTHON_MODULES)
 foreach(m ${OPENCV_MODULES_BUILD})
   if (";${OPENCV_MODULE_${m}_WRAPPERS};" MATCHES ";python;" AND HAVE_${m})
     list(APPEND OPENCV_PYTHON_MODULES ${m})
-    #message(STATUS "\t${m}")
   endif()
 endforeach()
 

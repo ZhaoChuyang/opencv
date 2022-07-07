@@ -8,6 +8,7 @@ namespace cv{
     // NOTE: cv::randomCrop or randomCrop?
     void randomCrop(InputArray _src, OutputArray _dst, const Size& sz, const Vec4i& padding, bool pad_if_need, int fill, int padding_mode){
         // FIXME: whether the size of src should be (src.cols+left+right, src.rows+top+bottom)
+
         Mat src = _src.getMat();
 
         if(padding != Vec4i()){
@@ -43,9 +44,14 @@ namespace cv{
             (*y) = 0;
             return;
         }
-        RNG& rng = theRNG();
+//        time_t t;
+//        srand((unsigned)time(&t));
+//        (*x) = static_cast<int> (rand() / static_cast<float> (RAND_MAX) * (w-tw+1));
+//        (*y) = static_cast<int> (rand()/ static_cast<float> (RAND_MAX) * (h-th+1));
+        RNG rng = RNG(getTickCount());
         (*x) = rng.uniform(0, w-tw+1);
         (*y) = rng.uniform(0, h-th+1);
+
     }
 
     RandomCrop::RandomCrop(const Size& sz, const Vec4i& padding, bool pad_if_need, int fill, int padding_mode):
@@ -66,8 +72,11 @@ namespace cv{
          * 1 is horizontal flip
          * -1 is flip bott horizontally and vertically
          */
-        RNG& rng = theRNG();
+//        RNG& rng = theRNG();
+        RNG rng = RNG(getTickCount());
         bool flag = rng.uniform(0., 1.) < p;
+//        srand((unsigned)time(nullptr));
+//        bool flag = static_cast<float> (rand() / RAND_MAX) < p;
 
         Mat src = _src.getMat();
         _dst.create(src.size(), src.type());
@@ -87,17 +96,24 @@ namespace cv{
         randomFlip(src, dst);
     }
 
-    Compose::Compose(std::vector<Transform *> transforms):
+    Compose::Compose(std::vector<Ptr<Transform> >& transforms):
         transforms(transforms){};
 
     void Compose::call(InputArray _src, OutputArray _dst) const{
         Mat src = _src.getMat();
 
-
         for(auto it = transforms.begin(); it != transforms.end(); ++it){
             (*it)->call(src, src);
         }
         src.copyTo(_dst);
+    }
+
+    Resize::Resize(const Size& sz, int interpolation):
+        sz(sz),
+        interpolation(interpolation){};
+
+    void Resize::call(InputArray src, OutputArray dst) const{
+        resize(src, dst, sz, 0, 0, interpolation);
     }
 
 }
