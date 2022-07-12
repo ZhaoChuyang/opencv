@@ -10,7 +10,13 @@ int main(int argv, char **argc) {
     const char* filename = argc[1];
     cv::Mat src = cv::imread(filename);
     cv::Mat dst;
-
+    cv::centerCrop(src, dst, cv::Size(100, 800));
+    //cv::randomCrop(src, src, cv::Size(100, 100));
+    cv::imshow("lena.png", src);
+    cv::waitKey(0);
+    cv::imshow("lena.png", dst);
+    cv::waitKey(0);
+    
 //    cv::randomCrop(src, dst, cv::Size(100, 100));
 //    cv::imshow("lena.png", dst);
 //    cv::waitKey(0);

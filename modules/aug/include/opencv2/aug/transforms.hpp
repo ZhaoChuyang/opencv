@@ -64,6 +64,16 @@ namespace cv{
         int interpolation;
     };
 
+    CV_EXPORTS void centerCrop(InputArray src, OutputArray dst, const Size& size);
+
+    class CV_EXPORTS_W CenterCrop : public Transform {
+    public:
+        CV_WRAP explicit CenterCrop(const Size& size);
+        CV_WRAP ~CenterCrop() override = default;
+        CV_WRAP void call(InputArray src, OutputArray dst) const override;
+
+        Size size;
+    };
 
 
 }

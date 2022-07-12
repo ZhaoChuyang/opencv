@@ -10,6 +10,8 @@ namespace cv{
         // FIXME: whether the size of src should be (src.cols+left+right, src.rows+top+bottom)
 
         Mat src = _src.getMat();
+        _dst.create(sz, src.type());
+        Mat dst = _dst.getMat();
 
         if(padding != Vec4i()){
             copyMakeBorder(src, src, padding[0], padding[1], padding[2], padding[3], padding_mode, fill);
@@ -30,8 +32,6 @@ namespace cv{
         int x, y;
         getRandomCropParams(src.rows, src.cols, sz.height, sz.width, &x, &y);
         Mat RoI(src, Rect(x, y, sz.width, sz.height));
-        _dst.create(sz.height, sz.width, src.type());
-        Mat dst = _dst.getMat();
         RoI.copyTo(dst);
     }
 
@@ -116,4 +116,36 @@ namespace cv{
         resize(src, dst, sz, 0, 0, interpolation);
     }
 
+    // size: (width, height)
+    void centerCrop(InputArray _src, OutputArray _dst, const Size& size) {
+        Mat src = _src.getMat();
+        Mat padded(src);
+        // pad the input image if needed
+        if (size.width > src.cols || size.height > src.rows) {
+            int top = size.height - src.rows > 0 ? static_cast<int>((size.height - src.rows) / 2) : 0;
+            int bottom = size.height - src.rows > 0 ? static_cast<int>((size.height - src.rows) / 2) : 0;
+            int left = size.width - src.cols > 0 ? static_cast<int>((size.width - src.cols) / 2) : 0;
+            int right = size.width - src.cols > 0 ? static_cast<int>((size.width - src.cols) / 2) : 0;
+
+            // fill with value 0
+            copyMakeBorder(src, padded, top, bottom, left, right, BORDER_CONSTANT, 0);
+        }
+
+        int x = static_cast<int>((padded.cols - size.width) / 2);
+        int y = static_cast<int>((padded.rows - size.height) / 2);
+        
+        Mat cropped(padded, Rect(x, y, size.width, size.height));
+        _dst.create(size, src.type());
+        Mat dst = _dst.getMat();
+        // Ensure the size of the cropped image is the same as the size of the dst
+        CV_Assert(cropped.size() == dst.size() && cropped.type() == dst.type());
+        cropped.copyTo(dst);
+    }
+
+    CenterCrop::CenterCrop(const Size& size) :
+        size(size) {};
+
+    void CenterCrop::call(InputArray src, OutputArray dst) const {
+        centerCrop(src, dst, size);
+    }
 }
