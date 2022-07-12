@@ -1931,10 +1931,29 @@ void ONNXImporter::parseImageScaler(LayerParams& layerParams, const opencv_onnx:
 
 void ONNXImporter::parseClip(LayerParams& layerParams, const opencv_onnx::NodeProto& node_proto)
 {
-    CV_CheckEQ(node_proto.input_size(), 1, "");
     layerParams.type = "ReLU6";
-    layerParams.set("min_value", layerParams.get<float>("min", -FLT_MAX));
-    layerParams.set("max_value", layerParams.get<float>("max", FLT_MAX));
+    float min_value = -FLT_MAX, max_value = FLT_MAX;
+    int input_size = node_proto.input_size();
+    CV_Check(input_size, 1 <= input_size && input_size <= 3, "");
+
+    if (input_size >= 2 && !node_proto.input(1).empty())
+    {
+        if (constBlobs.find(node_proto.input(1)) != constBlobs.end())
+            min_value = getBlob(node_proto, 1).at<float>(0);
+        else
+            CV_Error(Error::StsNotImplemented, "Non-constant min values in Clip are not supported");
+    }
+
+    if (input_size == 3 && !node_proto.input(2).empty())
+    {
+        if (constBlobs.find(node_proto.input(2)) != constBlobs.end())
+            max_value = getBlob(node_proto, 2).at<float>(0);
+        else
+            CV_Error(Error::StsNotImplemented, "Non-constant max values in Clip are not supported");
+    }
+
+    layerParams.set("min_value", layerParams.get<float>("min", min_value));
+    layerParams.set("max_value", layerParams.get<float>("max", max_value));
     addLayer(layerParams, node_proto);
 }
 
@@ -2080,15 +2099,17 @@ void ONNXImporter::parseBatchNormalization(LayerParams& layerParams, const openc
     addLayer(layerParams, node_proto);
 }
 
+// A * B + C = Y, we require that the dimension of A is [m, k], and the dimension of B is [n, k].
+// And the dim of output Y is [m, n]
 void ONNXImporter::parseGemm(LayerParams& layerParams, const opencv_onnx::NodeProto& node_proto)
 {
     CV_Assert(node_proto.input_size() >= 2);
     layerParams.type = "InnerProduct";
     Mat weights = getBlob(node_proto, 1);
-    int ind_num_out = 0;
-    if (layerParams.has("transB") && !layerParams.get<int>("transB")) {
+
+    if (!layerParams.get<int>("transB", 0))
+    {
         transpose(weights, weights);
-        ind_num_out = 1;
     }
     layerParams.blobs.push_back(weights);
 
@@ -2110,7 +2131,7 @@ void ONNXImporter::parseGemm(LayerParams& layerParams, const opencv_onnx::NodePr
         addLayer(constParams, proto);
     }
 
-    layerParams.set("num_output", layerParams.blobs[0].size[ind_num_out]);
+    layerParams.set("num_output", layerParams.blobs[0].size[0]);
     layerParams.set("bias_term", node_proto.input_size() == 3);
     addLayer(layerParams, node_proto);
 }
@@ -3380,6 +3401,7 @@ void ONNXImporter::parseQConv(LayerParams& layerParams, const opencv_onnx::NodeP
     int outCn = weights.size[0];
     Mat w_scale = getBlob(node_proto, 4);
     CV_Assert(w_scale.total() == 1 || w_scale.total() == outCn);
+    bool per_channel = w_scale.total() == outCn ? true : false;
     Mat wt_sc = (w_scale.total() == outCn) ? w_scale : Mat(1, outCn, CV_32F, Scalar(w_scale.at<float>(0)));
 
     Mat out_sc = getBlob(node_proto, 6);
@@ -3398,6 +3420,7 @@ void ONNXImporter::parseQConv(LayerParams& layerParams, const opencv_onnx::NodeP
     layerParams.set("num_output", outCn);
     layerParams.set("input_zeropoint", inp_zp.at<int8_t>(0));
     layerParams.set("input_scale",inp_sc.at<float>(0));
+    layerParams.set("per_channel", per_channel);
     layerParams.blobs.push_back(weights);
     layerParams.blobs.push_back(biasFused);
     layerParams.blobs.push_back(outputMultiplier);
@@ -3423,6 +3446,7 @@ void ONNXImporter::parseQMatMul(LayerParams& layerParams, const opencv_onnx::Nod
 
     Mat w_scale = getBlob(node_proto, 4);
     CV_Assert(w_scale.total() == 1 || w_scale.total() == outCn);
+    bool per_channel = w_scale.total() == outCn ? true : false;
     Mat wt_sc = (w_scale.total() == outCn) ? w_scale : Mat(1, outCn, CV_32F, Scalar(w_scale.at<float>(0)));
     Mat out_sc = getBlob(node_proto, 6);
 
@@ -3439,6 +3463,7 @@ void ONNXImporter::parseQMatMul(LayerParams& layerParams, const opencv_onnx::Nod
     layerParams.set("axis", firstInpDims - secondInpDims + 1);
     layerParams.set("input_scale", inp_sc.at<float>(0));
     layerParams.set("input_zeropoint", inp_zp.at<int8_t>(0));
+    layerParams.set("per_channel", per_channel);
 
     layerParams.blobs.push_back(weights);
     layerParams.blobs.push_back(bias);
