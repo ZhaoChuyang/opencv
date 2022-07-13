@@ -148,4 +148,13 @@ namespace cv{
     void CenterCrop::call(InputArray src, OutputArray dst) const {
         centerCrop(src, dst, size);
     }
+
+    Pad::Pad(const Vec4i& padding, const Scalar& fill, int padding_mode) :
+        padding(padding),
+        fill(fill),
+        padding_mode(padding_mode) {};
+
+    void Pad::call(InputArray src, OutputArray dst) const {
+        copyMakeBorder(src, dst, padding[0], padding[1], padding[2], padding[3], padding_mode, fill);
+    }
 }

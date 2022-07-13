@@ -75,6 +75,15 @@ namespace cv{
         Size size;
     };
 
+    class CV_EXPORTS_W Pad : public Transform{
+    public:
+        CV_WRAP explicit Pad(const Vec4i& padding, const Scalar& = Scalar(), int padding_mode = BORDER_CONSTANT);
+        CV_WRAP void call(InputArray src, OutputArray dst) const override;
+
+        Vec4i padding;
+        const Scalar fill;
+        int padding_mode;
+    };
 
 }
 
