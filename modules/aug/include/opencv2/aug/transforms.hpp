@@ -85,6 +85,19 @@ namespace cv{
         int padding_mode;
     };
 
+    CV_EXPORTS void randomResizedCrop(InputArray src, OutputArray dst, const Size& size, const Vec2d& scale = Vec2d(0.08, 1.0), const Vec2d& ratio = Vec2d(3.0 / 4.0, 4.0 / 3.0), int interpolation = INTER_LINEAR);
+
+    class CV_EXPORTS_W RandomResizedCrop : public Transform {
+    public:
+        CV_WRAP explicit RandomResizedCrop(const Size& size, const Vec2d& scale = Vec2d(0.08, 1.0), const Vec2d& ratio = Vec2d(3.0 / 4.0, 4.0 / 3.0), int interpolation = INTER_LINEAR);
+        CV_WRAP void call(InputArray src, OutputArray dst) const override;
+
+        Size size;
+        Vec2d scale;
+        Vec2d ratio;
+        int interpolation;
+    };
+
 }
 
 #endif

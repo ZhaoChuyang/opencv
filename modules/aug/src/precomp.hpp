@@ -4,5 +4,6 @@
 #include "opencv2/aug.hpp"
 #include <cstdlib>
 #include <ctime>
+#include <cmath>
 
 #endif

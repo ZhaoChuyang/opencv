@@ -6,17 +6,13 @@
 #include <vector>
 
 
-void test_pad_class(cv::Mat src, cv::Mat dst) {
-    cv::Pad pad(cv::Vec4i(100, 100, 100, 100), 255);
-    pad.call(src, dst);
-}
-
-
 int main(int argv, char** argc) {
     const char* filename = argc[1];
+    // lena.png is of size (512, 512)
     cv::Mat src = cv::imread(filename);
     cv::Mat dst;
-    
+
+    cv::randomResizedCrop(src, dst, cv::Size(300, 300));
     cv::imshow("lena.png", dst);
     cv::waitKey(0);
 

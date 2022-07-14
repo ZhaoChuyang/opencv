@@ -4,6 +4,7 @@
 namespace cv{
 
     static void getRandomCropParams(int h, int w, int th, int tw, int* x, int* y);
+    static void getRandomResizedCropParams(int height, int width, const Vec2d& scale, const Vec2d& ratio, Rect& rect);
 
     // NOTE: cv::randomCrop or randomCrop?
     void randomCrop(InputArray _src, OutputArray _dst, const Size& sz, const Vec4i& padding, bool pad_if_need, int fill, int padding_mode){
@@ -72,11 +73,10 @@ namespace cv{
          * 1 is horizontal flip
          * -1 is flip bott horizontally and vertically
          */
-//        RNG& rng = theRNG();
+
+        // initialize RNG with seed of current tick count
         RNG rng = RNG(getTickCount());
         bool flag = rng.uniform(0., 1.) < p;
-//        srand((unsigned)time(nullptr));
-//        bool flag = static_cast<float> (rand() / RAND_MAX) < p;
 
         Mat src = _src.getMat();
         _dst.create(src.size(), src.type());
@@ -157,4 +157,68 @@ namespace cv{
     void Pad::call(InputArray src, OutputArray dst) const {
         copyMakeBorder(src, dst, padding[0], padding[1], padding[2], padding[3], padding_mode, fill);
     }
+
+    void randomResizedCrop(InputArray _src, OutputArray _dst, const Size& size, const Vec2d& scale, const Vec2d& ratio, int interpolation) {
+        // Ensure scale range and ratio range are valid
+        CV_Assert(scale[0] <= scale[1] && ratio[0] <= ratio[1]);
+
+        Mat src = _src.getMat();
+
+        Rect crop_rect;
+        getRandomResizedCropParams(src.rows, src.cols, scale, ratio, crop_rect);
+        Mat cropped(src, Rect(crop_rect));
+        resize(cropped, _dst, size, 0.0, 0.0, interpolation);
+    }
+
+    static void getRandomResizedCropParams(int height, int width, const Vec2d& scale, const Vec2d& ratio, Rect& rect) {
+        int area = height * width;
+
+        // initialize random value generator
+        RNG rng = RNG(getTickCount());
+
+        for (int i = 0; i < 10; i++) {
+            double target_area = rng.uniform(scale[0], scale[1]) * area;
+            double aspect_ratio = rng.uniform(ratio[0], ratio[1]);
+
+            int w = static_cast<int>(round(sqrt(target_area * aspect_ratio)));
+            int h = static_cast<int>(round(sqrt(target_area / aspect_ratio)));
+
+            if (w > 0 && w <= width && h > 0 && h <= height) {
+                rect.x = rng.uniform(0, width - w + 1);
+                rect.y = rng.uniform(0, height - h + 1);
+                rect.width = w;
+                rect.height = h;
+                return;
+            }
+        }
+
+        // Center Crop
+        double in_ratio = static_cast<double>(width) / height;
+        if (in_ratio < ratio[0]) {
+            rect.width = width;
+            rect.height = static_cast<int> (round(width / ratio[0]));
+        }
+        else if (in_ratio > ratio[1]) {
+            rect.height = height;
+            rect.width = static_cast<int> (round(height * ratio[1]));
+        }
+        else {
+            rect.width = width;
+            rect.height = height;
+        }
+        rect.x = (width - rect.width) / 2;
+        rect.y = (height - rect.height) / 2;
+        
+    }
+
+    RandomResizedCrop::RandomResizedCrop(const Size& size, const Vec2d& scale, const Vec2d& ratio, int interpolation) :
+        size(size),
+        scale(scale),
+        ratio(ratio),
+        interpolation(interpolation) {};
+
+    void RandomResizedCrop::call(InputArray src, OutputArray dst) const{
+        randomResizedCrop(src, dst, size, scale, ratio, interpolation);
+    }
+
 }
