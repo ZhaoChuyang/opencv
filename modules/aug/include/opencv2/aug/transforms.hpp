@@ -26,6 +26,8 @@ namespace cv{
 
     CV_EXPORTS_W void randomCrop(InputArray src, OutputArray dst, const Size& sz, const Vec4i& padding=Vec4i() , bool pad_if_need=false, int fill=0, int padding_mode=BORDER_CONSTANT);
 
+//    CV_EXPORTS_W void randomCropV1(InputOutputArray src, const Size& sz, const Vec4i& padding=Vec4i() , bool pad_if_need=false, int fill=0, int padding_mode=BORDER_CONSTANT);
+
     CV_EXPORTS_W void randomFlip(InputArray src, OutputArray dst, int flipCode=0, double p=0.5);
 
     class CV_EXPORTS_W RandomCrop: public Transform{
@@ -97,6 +99,8 @@ namespace cv{
         Vec2d ratio;
         int interpolation;
     };
+
+    CV_EXPORTS void colorJitter(InputArray src, OutputArray dst, const Vec2d& brightness=Vec2d(), const Vec2d& contrast=Vec2d(), const Vec2d& saturation=Vec2d(), const Vec2d& hue=Vec2d());
 
 }
 
