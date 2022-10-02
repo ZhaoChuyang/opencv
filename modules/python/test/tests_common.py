@@ -29,6 +29,8 @@ class NewOpenCVTests(unittest.TestCase):
 
     def find_file(self, filename, searchPaths=[], required=True):
         searchPaths = searchPaths if searchPaths else [self.repoPath, self.extraTestDataPath]
+        with open("/Users/chuyang/Desktop/log.txt", "w") as fb:
+            fb.write("%s\n" % searchPaths)
         for path in searchPaths:
             if path is not None:
                 candidate = path + '/' + filename

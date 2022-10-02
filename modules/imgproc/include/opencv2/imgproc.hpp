@@ -4944,6 +4944,10 @@ public:
 
 //! @cond IGNORED
 
+// Dummy function for testing PR#22253
+CV_EXPORTS_W void testMatxPythonConverter(InputArray src, OutputArray dst, const Vec2d& defaultParam = Vec2d(-5, 5));
+
+
 // === LineIterator implementation ===
 
 inline
